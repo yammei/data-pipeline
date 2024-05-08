@@ -6,27 +6,29 @@ from dotenv import load_dotenv
 load_dotenv()
 
 api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
-
-symbol = "IBM"  # Example stock symbol
-function = "INCOME_STATEMENT"  # Income Statement endpoint
+symbol = "IBM"
+function = "TIME_SERIES_DAILY"
 
 endpoint_url = f'https://www.alphavantage.co/query?function={function}&symbol={symbol}&apikey={api_key}'
 response = requests.get(endpoint_url)
 data = response.json()
 
-# Check if the request was successful
-if "quarterlyReports" in data:
-    # Extract the quarterly reports from the response
-    quarterly_reports = data["quarterlyReports"]
+if "Time Series (Daily)" in data:
+    daily_data = data["Time Series (Daily)"]
+    csv_file_path = f"{symbol}_daily_data.csv"
 
-    # Define CSV file path
-    csv_file_path = f"{symbol}_income_statement.csv"
-
-    # Write data to CSV file
     with open(csv_file_path, mode="w", newline="") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=quarterly_reports[0].keys())
+        writer = csv.DictWriter(csv_file, fieldnames=["Date", "Open", "High", "Low", "Close", "Volume"])
         writer.writeheader()
-        writer.writerows(quarterly_reports)
+        for date, values in daily_data.items():
+            writer.writerow({
+                "Date": date,
+                "Open": values["1. open"],
+                "High": values["2. high"],
+                "Low": values["3. low"],
+                "Close": values["4. close"],
+                "Volume": values["5. volume"]
+            })
 
     print(f"Data saved to {csv_file_path}")
 else:
