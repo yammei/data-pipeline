@@ -6,6 +6,8 @@ import random
 import requests
 from bs4 import BeautifulSoup
 
+from datetime import datetime
+
 #________________________________________________________________________________________________________________________________________________________________
 
 # https://biztoc.com/hot
@@ -120,22 +122,38 @@ def get_content(source_HTML, source_URL):
 
 #________________________________________________________________________________________________________________________________________________________________
 
-print(f"\nSTAGE 1 ░░░░░░░░░░░░░░░░░░░░░░░░░░░")
+def curr_time():
+    return datetime.now().strftime("%I:%M:%S %p")
 
-# Get list of URLs from source HTML.
-source_HTML, source_URL = get_sources(main_source_URL)
-source_URLs, source_URLs_Length = get_URLs(source_HTML, source_URL)
+#________________________________________________________________________________________________________________________________________________________________
 
+def main():
+    try:
+        print(f"\nSTAGE 1 [{curr_time()}] ░░░░░░░░░░░░░░░░░░░░░░░░░░░")
 
-print(f"\nSTAGE 2 ░░░░░░░░░░░░░░░░░░░░░░░░░░░")
+        # Get list of URLs from source HTML.
+        source_HTML, source_URL = get_sources(main_source_URL)
+        source_URLs, source_URLs_Length = get_URLs(source_HTML, source_URL)
 
-# Picks random HTML for testing purposes.
-random_Index = random.randint(1, source_URLs_Length)
-print(f"\n[✔] Random index chosen for URL list: {random_Index}.")
+        #____________________________________________________________
 
-# Get data and metadata from each individual HTML in the list of URLs.
-individual_HTML, individual_URL = get_sources(source_URLs[random_Index])
-get_content(individual_HTML, individual_URL)
+        print(f"\nSTAGE 2 [{curr_time()}] ░░░░░░░░░░░░░░░░░░░░░░░░░░░")
 
-# Terminal space push.
-print("\n\n\n\n\n\n")
+        # Picks random HTML for testing purposes.
+        random_Index = random.randint(1, source_URLs_Length)
+        print(f"\n[✔] Random index chosen for URL list: {random_Index}.")
+
+        # Get data and metadata from each individual HTML in the list of URLs.
+        individual_HTML, individual_URL = get_sources(source_URLs[random_Index])
+        get_content(individual_HTML, individual_URL)
+
+        #____________________________________________________________
+
+        # Terminal space push.
+        print("\n\n\n\n\n\n")
+
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == "__main__":
+    main()
