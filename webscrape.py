@@ -5,8 +5,10 @@ import sys
 import random
 import requests
 from bs4 import BeautifulSoup
-
 from datetime import datetime
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 #________________________________________________________________________________________________________________________________________________________________
 
@@ -83,12 +85,40 @@ def get_content(source_HTML, source_URL):
         except Exception as e:
             print(f"[✗] Error: {e}.")
 
+    # def get_text():
+    #     try:
+    #         elements = soup.find_all(["p", "div", "a"])
+    #         word_threshold = 20
+    #         filtered_texts = [element.get_text(strip=True) for element in elements if len(element.get_text(strip=True).split()) >= word_threshold]
+    #         unique_texts = list(set(filtered_texts))
+
+    #         if unique_texts:
+    #             print(f"[✔] Article text: {len(unique_texts)} paragraphs.")
+    #             return unique_texts
+    #         else:
+    #             print(f"[✗] Article text not found.")
+
+    #     except Exception as e:
+    #         print(f"[✗] Error: {e}.")
+
     def get_text():
         try:
             elements = soup.find_all(["p", "div", "a"])
             word_threshold = 20
-            filtered_texts = [element.get_text(strip=True) for element in elements if len(element.get_text(strip=True).split()) >= word_threshold]
-            unique_texts = list(set(filtered_texts))
+            texts = [element.get_text(strip=True) for element in elements if len(element.get_text(strip=True).split()) >= word_threshold]
+
+            unique_texts = [texts[0]]
+            vectorizer = TfidfVectorizer()
+
+            for text in texts[1:]:
+                duplicate = False
+                for unique_text in unique_texts:
+                    similarity = cosine_similarity(vectorizer.fit_transform([text, unique_text]))
+                    if similarity[0][1] > 0.5:
+                        duplicate = True
+                        break
+                if not duplicate:
+                    unique_texts.append(text)
 
             if unique_texts:
                 print(f"[✔] Article text: {len(unique_texts)} paragraphs.")
@@ -122,6 +152,7 @@ def get_content(source_HTML, source_URL):
 
 #________________________________________________________________________________________________________________________________________________________________
 
+# Current time in 12 hour interval format.
 def curr_time():
     return datetime.now().strftime("%I:%M:%S %p")
 
