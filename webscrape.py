@@ -1,14 +1,12 @@
 import re
-# import csv
-import json # Switched from CSV to JSON
 import sys
+import json
 import random
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 #________________________________________________________________________________________________________________________________________________________________
 
@@ -85,28 +83,13 @@ def get_content(source_HTML, source_URL):
         except Exception as e:
             print(f"[✗] Error: {e}.")
 
-    # def get_text():
-    #     try:
-    #         elements = soup.find_all(["p", "div", "a"])
-    #         word_threshold = 20
-    #         filtered_texts = [element.get_text(strip=True) for element in elements if len(element.get_text(strip=True).split()) >= word_threshold]
-    #         unique_texts = list(set(filtered_texts))
-
-    #         if unique_texts:
-    #             print(f"[✔] Article text: {len(unique_texts)} paragraphs.")
-    #             return unique_texts
-    #         else:
-    #             print(f"[✗] Article text not found.")
-
-    #     except Exception as e:
-    #         print(f"[✗] Error: {e}.")
-
     def get_text():
         try:
             elements = soup.find_all(["p", "div", "a"])
             word_threshold = 20
-            texts = [element.get_text(strip=True) for element in elements if len(element.get_text(strip=True).split()) >= word_threshold]
+            similarity_threshold = 0.5
 
+            texts = [element.get_text(strip=True) for element in elements if len(element.get_text(strip=True).split()) >= word_threshold and not any(len(word) >= 20 for word in element.get_text(strip=True).split())]
             unique_texts = [texts[0]]
             vectorizer = TfidfVectorizer()
 
@@ -114,7 +97,7 @@ def get_content(source_HTML, source_URL):
                 duplicate = False
                 for unique_text in unique_texts:
                     similarity = cosine_similarity(vectorizer.fit_transform([text, unique_text]))
-                    if similarity[0][1] > 0.5:
+                    if similarity[0][1] > similarity_threshold:
                         duplicate = True
                         break
                 if not duplicate:
