@@ -6,11 +6,15 @@ import random
 import requests
 from bs4 import BeautifulSoup
 
+#________________________________________________________________________________________________________________________________________________________________
+
 # https://biztoc.com/hot
 # https://biztoc.com/light
 
 main_source_URL = "https://biztoc.com/light"
 html_name = "web_page.html"
+
+#________________________________________________________________________________________________________________________________________________________________
 
 # Scrape list of sources with recent stock-related news.
 def get_sources(source_URL):
@@ -22,7 +26,9 @@ def get_sources(source_URL):
         print(f"[✔] Successfully retrieved HTML of size {str(sys.getsizeof(response.text)/(1024 * 1024))[:5]} MB.")
         return response.text, source_URL
     else:
-        print(f"[✗] Error: {response.status_code}")
+        print(f"[✗] Error: {response.status_code}.")
+
+#________________________________________________________________________________________________________________________________________________________________
 
 # Parse all available URLs from source HTML.
 def get_URLs(source_HTML, source_URL):
@@ -38,79 +44,98 @@ def get_URLs(source_HTML, source_URL):
         return href_list, href_list_len
 
     except Exception as e:
-        print(f"[✗] Error: {e}")
+        print(f"[✗] Error: {e}.")
+
+#________________________________________________________________________________________________________________________________________________________________
 
 # Save all content available in each URL retrieved from source HTML.
 def get_content(source_HTML, source_URL):
-    print(f"\n[-] Retrieving all available text entries from: {source_URL}.")
+    print(f"\n[-] Retrieving available data from: {source_URL}.")
+
+    #____________________________________________________________
+
+    def get_title():
+        try:
+            title = soup.title.string.strip()
+            if title:
+                print(f"[✔] Article title: {title}")
+                return title
+            else:
+                print(f"[✗] Article Title not found.")
+
+        except Exception as e:
+            print(f"[✗] Error: {e}.")
+
+    def get_date():
+        try:
+            pattern = r"\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},\s+\d{4}\b"
+            regex = re.compile(pattern, re.IGNORECASE)
+            match = regex.search(source_HTML)
+
+            if match:
+                print(f"[✔] Article date: {match.group()}.")
+                return match.group()
+            else:
+                print(f"[✗] Article date not found.")
+
+        except Exception as e:
+            print(f"[✗] Error: {e}.")
+
+    def get_text():
+        try:
+            elements = soup.find_all(["p", "div", "a"])
+            word_threshold = 20
+            filtered_texts = [element.get_text(strip=True) for element in elements if len(element.get_text(strip=True).split()) >= word_threshold]
+            unique_texts = list(set(filtered_texts))
+
+            if unique_texts:
+                print(f"[✔] Article text: {len(unique_texts)} paragraphs.")
+                return unique_texts
+            else:
+                print(f"[✗] Article text not found.")
+
+        except Exception as e:
+            print(f"[✗] Error: {e}.")
+
+    #____________________________________________________________
 
     try:
         soup = BeautifulSoup(source_HTML, "html.parser")
 
-        # Retrieve title
-        title = soup.title.string.strip()
-        print(f"[✔] Title of the HTML file: {title}")
-
-        # Retrieve date
-        date = get_date(source_HTML, source_URL)
-        if date:
-            print(f"[✔] Article date: {date}")
-        else:
-            print("[✗] Article date not found.")
-
-        # Retrieve text entries
-        elements = soup.find_all(["p", "div", "a"])
-        filtered_texts = [element.get_text(strip=True) for element in elements if len(element.get_text(strip=True).split()) > 5]
-        unique_texts = list(set(filtered_texts))
-
         data = {
             "source": source_URL,
-            "title": title,
-            "date": date,
-            "paragraphs": unique_texts
+            "title": get_title(),
+            "date": get_date(),
+            "paragraphs": get_text(),
         }
 
         json_path = "content.json"
         with open(json_path, "w", encoding="utf-8") as json_file:
             json.dump(data, json_file, ensure_ascii=False, indent=4)
 
-        print(f"[✔] Data saved to: {json_path}")
+        print(f"[✔] Article data saved to: {json_path}.")
 
     except Exception as e:
-        print(f"[✗] Error: {e}")
+        print(f"[✗] Error: {e}.")
 
+#________________________________________________________________________________________________________________________________________________________________
 
-def get_date(source_HTML, source_URL):
-    print(f"\n[-] Retrieving article date from: {source_URL}.")
-
-    try:
-        pattern = r"\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},\s+\d{4}\b"
-        regex = re.compile(pattern, re.IGNORECASE)
-        match = regex.search(source_HTML)
-
-        if match:
-            print(f"[✔] Successfully retrieved article date: {match.group()}.")
-            return match.group()
-        else:
-            print("[✗] Error: Date not found.")
-            return None
-
-    except Exception as e:
-        print(f"[✗] Error: {e}")
-        return None
-
+print(f"\nSTAGE 1 ░░░░░░░░░░░░░░░░░░░░░░░░░░░")
 
 # Get list of URLs from source HTML.
 source_HTML, source_URL = get_sources(main_source_URL)
 source_URLs, source_URLs_Length = get_URLs(source_HTML, source_URL)
 
+
+print(f"\nSTAGE 2 ░░░░░░░░░░░░░░░░░░░░░░░░░░░")
+
+# Picks random HTML for testing purposes.
 random_Index = random.randint(1, source_URLs_Length)
-print(f"\n[✔] Random index chosen for URL list: {random_Index}")
+print(f"\n[✔] Random index chosen for URL list: {random_Index}.")
 
 # Get data and metadata from each individual HTML in the list of URLs.
 individual_HTML, individual_URL = get_sources(source_URLs[random_Index])
 get_content(individual_HTML, individual_URL)
-get_date(individual_URL, individual_URL)
 
 # Terminal space push.
 print("\n\n\n\n\n\n")
