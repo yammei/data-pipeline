@@ -1,0 +1,7 @@
+\n
+sign in
+sign up
+log in
+login
+logout
+log out
